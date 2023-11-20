@@ -1,0 +1,17 @@
+[package]
+name = "ipl_wgpu"
+version = "0.1.0"
+authors = ["Max Bebök"]
+description = "IPL"
+publish = false
+edition = '2021'
+
+[dependencies]
+wgpu = { version = "0.18.0", features = ["glsl", "spirv"] }
+bytemuck = "1.14.0"
+flume = "0.11.0"
+futures = "0.3.29"
+
+[[bin]]
+name = "ipl_wgpu"
+path = "src/main.rs"
