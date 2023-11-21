@@ -10,11 +10,11 @@ layout(push_constant) uniform Params {
    u32 offset;
 } params;
 */
-// input[] on the CPU side, fixed
-layout(std430, binding = 0) readonly buffer layout1 { u32 inputReadOnly[]; };
+// input[] on the CPU side, fixe
+layout(std430, binding = 0) buffer layout1 { u32 inputReadOnly[16]; };
 // array of 64-bit values on the CPU side, final checksums
 // only used for debugging purposes
-layout(std430, binding = 1) buffer layout0 { u32 checksums[]; };
+layout(std430, binding = 1) buffer layout0 { u32 checksums[16]; };
 // result flag, only gets written to with a non-zero value if a match is found
 layout(std430, binding = 2) buffer layout2 { u32 found; };
 
@@ -39,7 +39,7 @@ u32 hashMulDiff(u32 factorBase, u32 factorA, u32 factorB) {
     u32 hi, lo;
     if (factorA == 0)factorA = factorB;
 
-    //umulExtended(factorBase, factorA, hi, lo);
+    umulExtended(factorBase, factorA, hi, lo);
     u32 diff = hi - lo;
 
     #ifdef FAST_HASH_MUL
@@ -51,7 +51,7 @@ u32 hashMulDiff(u32 factorBase, u32 factorA, u32 factorB) {
 
 u32 hashMulDiff_ANonZero(u32 factorBase, u32 factorA) {
     u32 hi, lo;
-    //umulExtended(factorBase, factorA, hi, lo);
+    umulExtended(factorBase, factorA, hi, lo);
     u32 diff = hi - lo;
 
     #ifdef FAST_HASH_MUL
@@ -212,8 +212,16 @@ void main()
   // finalize and write out checksums if it matches
   u32 high = finalizeHigh(state);
 
-  checksums[0] = OFFSET;
-  checksums[1] = inputReadOnly[2];
+  checksums[0] = high;
+  checksums[1] = state[0];
+  checksums[2] = state[1];
+  checksums[3] = state[2];
+  checksums[4] = inputReadOnly[0];
+  checksums[5] = inputReadOnly[1];
+  checksums[6] = inputReadOnly[2];
+  checksums[7] = 42;
+  checksums[8] = OFFSET;
+  found = id;
 
   if(high == 0x00008618)
   {
