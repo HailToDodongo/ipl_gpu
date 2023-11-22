@@ -2,23 +2,16 @@
 
 #define u32 uint
 
-//layout(local_size_x_id = 0) in;
-//layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-/*
+layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;
+
 layout(push_constant) uniform Params {
-   u32 count;
    u32 offset;
 } params;
-*/
+
 // input[] on the CPU side, fixe
 layout(std430, binding = 0) buffer layout1 { u32 inputReadOnly[16]; };
-// array of 64-bit values on the CPU side, final checksums
-// only used for debugging purposes
-layout(std430, binding = 1) buffer layout0 { u32 checksums[16]; };
-// result flag, only gets written to with a non-zero value if a match is found
-layout(std430, binding = 2) buffer layout2 { u32 found; };
-
-layout(std430, binding = 3 ) buffer layout3 { u32 OFFSET; };
+// array of 64-bit values on the CPU side, final checksums, also used to check for results
+layout(std430, binding = 1) buffer layout0 { u32 checksumsRes[4]; };
 
 #define MAGIC_NUMBER  0x6c078965
 
@@ -199,43 +192,34 @@ void checksumStep_1007_1008(inout u32[16] state, u32 data1007)
 
 void main()
 {
-  const u32 id = gl_GlobalInvocationID.x;
+  const u32 id = gl_GlobalInvocationID.x
+    + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 
   // state is shared acrosss workers and even acrosss invocations, make copy
   u32 state[16];
   for(int i=0; i<16; ++i)state[i] = inputReadOnly[i];
 
   // last 2 steps in the checksum
-  u32 data1007 = id + OFFSET; // would be input[1007] on the CPU
+  u32 data1007 = id + params.offset; // would be input[1007] on the CPU
   checksumStep_1007_1008(state, data1007);
 
   // finalize and write out checksums if it matches
   u32 high = finalizeHigh(state);
-
-  checksums[0] = high;
-  checksums[1] = state[0];
-  checksums[2] = state[1];
-  checksums[3] = state[2];
-  checksums[4] = inputReadOnly[0];
-  checksums[5] = inputReadOnly[1];
-  checksums[6] = inputReadOnly[2];
-  checksums[7] = 42;
-  checksums[8] = OFFSET;
-  found = id;
-
+  //checksums[id] = 1000 + id; // DEBUG
   if(high == 0x00008618)
   {
     u32 low = finalizeLow(state);
     //return true;
     //if((low & 0xFFFF) == 0xC2D3) // 16 bits
     //if((low & 0xFFFFF) == 0xBC2D3) // 20 bits
-    //if((low & 0xFFFFFF) == 0x5BC2D3) // 24 bits
+    if((low & 0xFFFFFF) == 0x5BC2D3) // 24 bits
     //if((low & 0xFFFFFFF) == 0x45BC2D3) // 28 bits
-    if(low == 0xA45BC2D3) // 32 bits (full)
+    //if(low == 0xA45BC2D3) // 32 bits (full)
     {
-      found = data1007;
-      checksums[0] = finalizeLow(state);
-      checksums[1] = finalizeHigh(state);
+      checksumsRes[0] = finalizeLow(state);
+      checksumsRes[1] = finalizeHigh(state);
+      checksumsRes[2] = data1007;
+      checksumsRes[3] = id;
     }
   }
 }
