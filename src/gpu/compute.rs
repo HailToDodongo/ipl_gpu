@@ -1,3 +1,6 @@
+// @author Max Bebök
+// @license MIT
+
 use std::mem::size_of;
 use futures_intrusive::channel;
 use wgpu::{include_spirv_raw};
