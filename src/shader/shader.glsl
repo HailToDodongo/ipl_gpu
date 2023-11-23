@@ -10,7 +10,7 @@ layout(push_constant) uniform Params {
 
 // input[] on the CPU side, fixe
 layout(std430, binding = 0) buffer layout1 { u32 inputReadOnly[16]; };
-// array of 64-bit values on the CPU side, final checksums, also used to check for results
+// final checksums & result index / data1007 value
 layout(std430, binding = 1) buffer layout0 { u32 checksumsRes[4]; };
 
 #define MAGIC_NUMBER  0x6c078965
@@ -18,6 +18,7 @@ layout(std430, binding = 1) buffer layout0 { u32 checksumsRes[4]; };
 // Assumes that the difference check will never be zero.
 // This may give wrong results (false positives & negatives).
 #define FAST_HASH_MUL 1
+// Assumes that finalizeHigh's last hash buff.y value will never be zero.
 #define FAST_FINALIZE_HIGH 1
 
 u32 rotl(u32 n, u32 d) {
@@ -167,20 +168,12 @@ void checksumStep_1007_1008(inout u32[16] state, u32 data1007)
   state[4] += data1007;
   state[5] += data1007;
 
-  // Branch-Version:
   if (data1007 < state[6]) {
     state[6] = (state[3] + state[6]) ^ (data1007 + 1008);
   } else {
     state[6] ^= (state[4] + data1007);
   }
-/*
-  // Branchless-Version: (slower?)
-    u32 ifTrue = (data1007 < state[6]) ? 1 : 0;
-    u32 ifFalse = 1 - ifTrue;
 
-    state[6] = (ifTrue * ((state[3] + state[6]) ^ (data1007 + 1008)))
-             + (ifFalse * (state[6] ^ (state[4] + data1007)));
-*/
   state[9] = hashMulDiff_ANonZero(state[9], data1007);
 
   // Step 1007: data & dataLast is always zero, data1007 is never zero
@@ -205,16 +198,16 @@ void main()
 
   // finalize and write out checksums if it matches
   u32 high = finalizeHigh(state);
-  //checksums[id] = 1000 + id; // DEBUG
+  //checksums[id] = 1000 + id; // (DEBUG)
   if(high == 0x00008618)
   {
     u32 low = finalizeLow(state);
     //return true;
-    //if((low & 0xFFFF) == 0xC2D3) // 16 bits
-    //if((low & 0xFFFFF) == 0xBC2D3) // 20 bits
-    if((low & 0xFFFFFF) == 0x5BC2D3) // 24 bits
-    //if((low & 0xFFFFFFF) == 0x45BC2D3) // 28 bits
-    //if(low == 0xA45BC2D3) // 32 bits (full)
+    //if((low & 0xFFFF) == 0xC2D3) // 16 bits (DEBUG)
+    //if((low & 0xFFFFF) == 0xBC2D3) // 20 bits (DEBUG)
+    //if((low & 0xFFFFFF) == 0x5BC2D3) // 24 bits (DEBUG)
+    //if((low & 0xFFFFFFF) == 0x45BC2D3) // 28 bits (DEBUG)
+    if(low == 0xA45BC2D3) // 32 bits (full)
     {
       checksumsRes[0] = finalizeLow(state);
       checksumsRes[1] = finalizeHigh(state);

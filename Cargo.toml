@@ -1,8 +1,8 @@
 [package]
-name = "ipl_wgpu"
+name = "ipl_gpu"
 version = "0.1.0"
 authors = ["Max Bebök"]
-description = "IPL"
+description = "IPL GPU Hasher"
 publish = false
 edition = '2021'
 
@@ -13,11 +13,13 @@ flume = "0.11.0"
 futures = "0.3.29"
 futures-intrusive = "0.5.0"
 clap = { version = "4.4.8", features = ["derive"] }
+clap-num = "1.0.2"
+fastrand = "2.0.1"
 
 [profile.dev]
 # Hashing completely relies on it
 overflow-checks = false
 
 [[bin]]
-name = "ipl_wgpu"
+name = "ipl_gpu"
 path = "src/main.rs"
