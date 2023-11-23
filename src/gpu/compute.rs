@@ -3,7 +3,7 @@
 
 use std::mem::size_of;
 use futures_intrusive::channel;
-use wgpu::{include_spirv_raw};
+use wgpu::{Dx12Compiler, Gles3MinorVersion, include_spirv_raw, InstanceFlags};
 use crate::gpu::{buffer, layout};
 
 const CMD_ENCODER_DESC: wgpu::CommandEncoderDescriptor = wgpu::CommandEncoderDescriptor { label: None };
@@ -27,7 +27,13 @@ pub(crate) struct GPUCompute {
 impl GPUCompute {
   pub async fn new() -> Self
   {
-    let instance = wgpu::Instance::default();
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::VULKAN,
+        flags: InstanceFlags::default(),
+        dx12_shader_compiler: Dx12Compiler::default(),
+        gles_minor_version: Gles3MinorVersion::default(),
+    });
+
     let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await.unwrap();
     let adapter_info = adapter.get_info();
 
