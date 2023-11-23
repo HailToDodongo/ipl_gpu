@@ -34,6 +34,10 @@ impl GPUCompute {
         gles_minor_version: Gles3MinorVersion::default(),
     });
 
+    instance.enumerate_adapters(wgpu::Backends::all()).for_each(|adapter| {
+      println!("Adapter: {:?}, Backend: {:?}", adapter.get_info().name, adapter.get_info().backend);
+    });
+
     let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await.unwrap();
     let adapter_info = adapter.get_info();
 
