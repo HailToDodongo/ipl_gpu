@@ -28,7 +28,7 @@ impl GPUCompute {
   pub async fn new() -> Self
   {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::VULKAN,
+        backends: wgpu::Backends::all(),
         flags: InstanceFlags::default(),
         dx12_shader_compiler: Dx12Compiler::default(),
         gles_minor_version: Gles3MinorVersion::default(),
