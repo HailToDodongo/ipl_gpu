@@ -23,12 +23,13 @@ layout(std430, binding = 1) buffer layout0 { u32 checksumsRes[4]; };
 // Assumes that finalizeHigh's last hash buff.y value will never be zero.
 #define FAST_FINALIZE_HIGH 1
 
-u32 rotl(u32 n, u32 d) {
-    return (n << d)|(n >> (32 - d));
-}
-
+/*
 u32 rotr(u32 n, u32 d) {
     return (n >> d)|(n << (32 - d));
+}
+*/
+u32 rotr(u32 x, u32 n) {
+  return u32(packUint2x32(uvec2(x)) >> n);
 }
 
 u32 mul64bit_diff(u32 x, u32 y) {
@@ -201,7 +202,7 @@ void main()
 
   // finalize and write out checksums if it matches
   u32 high = finalizeHigh(state);
-  //checksums[id] = 1000 + id; // (DEBUG)
+  //if(high == (id&0xFFFF)) // (DEBUG)
   if(high == 0x00008618)
   {
     u32 low = finalizeLow(state);
