@@ -106,15 +106,10 @@ void finalizeHigh_Step(inout uvec2 buf, u32 data, u32 i)
     buf.x += rotr(data, data & 0x1F);
 
     // branchless version is slightly faster
-    u32 branchA = data < buf.x ? 1 : 0;
-    u32 branchB = 1 - branchA;
-
     #ifdef FAST_FINALIZE_HIGH
-      buf.y = (u32(branchA) * (buf.y + data))
-            + (branchB * hashMulDiff_ANonZero(buf.y, data));
+      buf.y = mix(buf.y + data, hashMulDiff_ANonZero(buf.y, data), data >= buf.x);
     #else
-      buf.y = (branchA * (buf.y + data))
-            + (branchB * hashMulDiff(buf.y, data, i));
+      buf.y = mix(buf.y + data, hashMulDiff(buf.y, data, i), data >= buf.x);
     #endif
 }
 
