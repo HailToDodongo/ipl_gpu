@@ -1,6 +1,8 @@
 #version 460
+#extension GL_ARB_gpu_shader_int64 : enable
 
 #define u32 uint
+#define u64 uint64_t
 
 layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;
 
@@ -29,12 +31,15 @@ u32 rotr(u32 n, u32 d) {
     return (n >> d)|(n << (32 - d));
 }
 
-u32 hashMulDiff(u32 factorBase, u32 factorA, u32 factorB) {
-    u32 hi, lo;
-    if (factorA == 0)factorA = factorB;
+u32 mul64bit_diff(u32 x, u32 y) {
+    // using 64-bit integer is way faster then imulExtended
+    uvec2 parts = unpackUint2x32(u64(x) * u64(y));
+    return parts.y - parts.x;
+}
 
-    umulExtended(factorBase, factorA, hi, lo);
-    u32 diff = hi - lo;
+u32 hashMulDiff(u32 factorBase, u32 factorA, u32 factorB) {
+    if (factorA == 0)factorA = factorB;
+    u32 diff = mul64bit_diff(factorBase, factorA);
 
     #ifdef FAST_HASH_MUL
       return diff;
@@ -44,9 +49,7 @@ u32 hashMulDiff(u32 factorBase, u32 factorA, u32 factorB) {
 }
 
 u32 hashMulDiff_ANonZero(u32 factorBase, u32 factorA) {
-    u32 hi, lo;
-    umulExtended(factorBase, factorA, hi, lo);
-    u32 diff = hi - lo;
+    u32 diff = mul64bit_diff(factorBase, factorA);
 
     #ifdef FAST_HASH_MUL
       return diff;
